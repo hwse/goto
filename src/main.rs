@@ -2,18 +2,20 @@ use std::convert::TryFrom;
 use std::fs::{read_to_string};
 use std::env::args;
 
+type RegisterIndex = usize;
+
 #[allow(dead_code)]
 #[derive(Debug, Eq, PartialEq)]
 enum Instruction {
     Stop,
-    Inc { cell: usize },
-    Dec { cell: usize },
-    Goto { cell: usize },
-    GotoZ { condition_cell: usize, goto_cell: usize },
+    Inc { cell: RegisterIndex },
+    Dec { cell: RegisterIndex },
+    Goto { cell: RegisterIndex },
+    GotoZ { condition_cell: RegisterIndex, goto_cell: RegisterIndex },
 }
 
-fn parse_nr(text: &str) -> Result<usize, String> {
-    text.parse::<usize>()
+fn parse_nr(text: &str) -> Result<RegisterIndex, String> {
+    text.parse::<RegisterIndex>()
         .map_err(|e| format!("{} is not a number (reason: {:?})", text, e))
 }
 
@@ -102,8 +104,8 @@ struct GotoProgram {
 #[derive(Debug)]
 struct GotoProgramState<'a> {
     program: &'a GotoProgram,
-    program_counter: usize,
-    memory: Vec<usize>,
+    program_counter: RegisterIndex,
+    memory: Vec<RegisterIndex>,
 }
 
 impl GotoProgramState<'_> {
