@@ -1,0 +1,9 @@
+[package]
+name = "goto"
+version = "0.1.0"
+authors = ["hwse <hagen.weisse@stud.htwk-leipzig.de>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
