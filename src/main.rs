@@ -1,6 +1,9 @@
+extern crate clap;
+
 use std::convert::TryFrom;
 use std::fs::{read_to_string};
-use std::env::args;
+
+use clap::{App, Arg};
 
 type RegisterIndex = usize;
 
@@ -105,21 +108,25 @@ struct GotoProgram {
 struct GotoProgramState<'a> {
     program: &'a GotoProgram,
     program_counter: RegisterIndex,
-    memory: Vec<RegisterIndex>,
+    memory: Vec<u64>,
 }
 
 impl GotoProgramState<'_> {
     fn run(&mut self) {
         loop {
+            println!("{:?}: {:?}", self.program_counter, self.program.instructions[self.program_counter]);
+            println!("mem: {:?}", self.memory);
             match self.program.instructions[self.program_counter] {
                 Instruction::Stop => {
                     break;
                 }
                 Instruction::Inc { cell } => {
                     self.memory[cell] += 1;
+                    self.program_counter += 1;
                 }
                 Instruction::Dec { cell } => {
                     self.memory[cell] -= 1;
+                    self.program_counter += 1;
                 }
                 Instruction::Goto { cell } => {
                     self.program_counter = cell;
@@ -127,24 +134,60 @@ impl GotoProgramState<'_> {
                 Instruction::GotoZ { condition_cell, goto_cell } => {
                     if self.memory[condition_cell] == 0 {
                         self.program_counter = goto_cell;
+                    } else {
+                        self.program_counter += 1;
                     }
                 }
             }
-            self.program_counter += 1;
         }
     }
 }
 
+fn read_input(text: String) -> Result<Vec<u64>, String> {
+    let mut result = vec![];
+    for token in text.split(" ").filter(|t| t.len() > 0) {
+        let nr = token.parse::<u64>()
+            .map_err(|e| format!("Number parsing error: {}", e))?;
+        result.push(nr);
+    }
+    Ok(result)
+}
+
+fn cli_arguments() -> (String, String) {
+    let matches = App::new("goto")
+        .version("1.0")
+        .about("Run a goto program")
+        .arg(Arg::with_name("source file")
+            .short("s")
+            .long("source")
+            .takes_value(true)
+            .required(true)
+            .help("the goto program source file"))
+        .arg(Arg::with_name("input")
+            .short("i")
+            .long("input")
+            .takes_value(true)
+            .required(true)
+            .help("the memory on which to goto program works"))
+        .get_matches();
+    let source_file = matches.value_of("source file").unwrap();
+    let input_file = matches.value_of("input").unwrap();
+    (source_file.to_string(), input_file.to_string())
+}
+
 fn main() {
-    let args: Vec<_> = args().collect();
-    let program_code = read_to_string(&args[1]).expect("Error while reading code");
-    let instructions = parse_commands(program_code).expect("Error while parsing code");
+    let (source_file, input_file) = cli_arguments();
+    let program_code = read_to_string(source_file).expect("Error while reading code");
+    let instructions = parse_commands(program_code)
+        .expect("Error while parsing code");
+    let input_text = read_to_string(input_file).expect("Error while reading input");
+    let memory = read_input(input_text).expect("Error while parsing input");
     let program = GotoProgram { instructions };
     println!("program = {:?}", program);
     let mut state = GotoProgramState {
         program: &program,
         program_counter: 0,
-        memory: vec![0; 10]
+        memory
     };
     println!("input: {:?}", state.memory);
     state.run();
