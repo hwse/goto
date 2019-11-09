@@ -145,7 +145,8 @@ impl GotoProgramState<'_> {
 
 fn read_input(text: String) -> Result<Vec<u64>, String> {
     let mut result = vec![];
-    for token in text.split(" ").filter(|t| t.len() > 0) {
+    for token in text.split(|c| c==' ' || c == '\n').filter(|t| t.len() > 0) {
+
         let nr = token.parse::<u64>()
             .map_err(|e| format!("Number parsing error: {}", e))?;
         result.push(nr);
